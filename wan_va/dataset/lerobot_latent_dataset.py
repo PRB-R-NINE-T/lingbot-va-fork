@@ -1,3 +1,4 @@
+# Copyright 2024-2025 The Robbyant Team Authors. All rights reserved.
 from lerobot.datasets.lerobot_dataset import LeRobotDataset, LeRobotDatasetMetadata
 from lerobot.datasets.utils import get_episode_data_index
 from lerobot.datasets.compute_stats import aggregate_stats, compute_episode_stats
