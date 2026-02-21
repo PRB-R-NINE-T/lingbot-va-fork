@@ -43,23 +43,25 @@ from utils import (
     FlowMatchScheduler
 )
 
-from dataset import MultiLatentLeRobotDataset
+from dataset import MultiLatentLeRobotDataset, MultiUnitreeLatentLeRobotDataset
 import gc
 
 
 class Trainer:
     def __init__(self, config):
         if config.enable_wandb and config.rank == 0:
-            wandb.login(host=os.environ['WANDB_BASE_URL'], key=os.environ['WANDB_API_KEY'])
+            wandb_base_url = os.environ.get('WANDB_BASE_URL', 'https://api.wandb.ai')
+            wandb_api_key = os.environ.get('WANDB_API_KEY', '')
+            wandb.login(host=wandb_base_url, key=wandb_api_key)
             self.wandb = wandb
+            wandb_entity = os.environ.get("WANDB_TEAM_NAME", None)
+            wandb_project = os.environ.get("WANDB_PROJECT", "lingbot-va-unitree")
             self.wandb.init(
-                entity=os.environ["WANDB_TEAM_NAME"],
-                project=os.getenv("WANDB_PROJECT", "va_robotwin"),
-                # dir=log_dir,
+                entity=wandb_entity,
+                project=wandb_project,
                 config=config,
                 mode="online",
-                name='test_lln'
-                # name=os.path.basename(os.path.normpath(job_config.job.dump_folder))
+                name=f'unitree_posttrain',
             )
             logger.info("WandB logging enabled")
         self.step = 0
@@ -118,7 +120,10 @@ class Trainer:
 
         # Setup dataloaders
         logger.info("Setting up datasets...")
-        train_dataset = MultiLatentLeRobotDataset(config=config)
+        if getattr(config, 'env_type', '').startswith('unitree'):
+            train_dataset = MultiUnitreeLatentLeRobotDataset(config=config)
+        else:
+            train_dataset = MultiLatentLeRobotDataset(config=config)
         train_sampler = DistributedSampler(
             train_dataset,
             num_replicas=config.world_size,
